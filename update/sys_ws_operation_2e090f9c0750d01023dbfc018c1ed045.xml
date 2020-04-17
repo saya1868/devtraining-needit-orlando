@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri>/api/x_58872_needit/needit_api/nigetinfo/{user_name}</default_operation_uri>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>GET</http_method>
+        <name>ni_getinfo</name>
+        <operation_script><![CDATA[(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+// implement resource here
+
+// URLで渡されたuser_nameパスパラメータから値を取得します
+var requestUser = request.pathParams.user_name;
+// URLで渡されたni_queryクエリパラメータの値を取得します。
+var requestNIQuery = request.queryParams.ni_query;
+
+// sys_userテーブルをクエリして、user_idパスパラメータで渡されたユーザーのユーザーレコードを取得します。
+var requestUserName = new GlideRecord('sys_user');
+requestUserName.get('user_name',requestUser);
+
+
+
+// user_nameパスパラメータのユーザーが要求されているアクティブなNeedItテーブルレコードの数を取得します。 
+// エンコードされたクエリは、クエリパラメータの関連付けからのものです。 カテゴリ別にグループ化します。
+var userNICount = new GlideAggregate('x_58872_needit_needit');
+userNICount.addAggregate('COUNT');
+userNICount.addQuery('u_requested_for',requestUserName.sys_id);
+userNICount.addEncodedQuery(requestNIQuery);
+userNICount.groupBy('u_request_type');
+userNICount.query();
+
+
+var needitRecs = 0;
+var niUserRecs = [];
+var needitRecsCount = 0;
+
+while (userNICount.next()) {
+	needitRecs = userNICount.getAggregate('COUNT');
+	var reqType = userNICount.u_request_type.getDisplayValue();
+	niUserRecs.push({"requestType": reqType, "count": needitRecs});
+	needitRecsCount = parseInt(needitRecsCount) + parseInt(needitRecs);
+}
+	
+//ボディオブジェクトを作成します。本文にプロパティ値のペアを追加します。
+var body = {};
+body.totalUserNIRecs = needitRecsCount;
+body.catCounts = niUserRecs;
+body.user = {"User name": requestUserName.user_name,
+"User ID": requestUserName.sys_id};
+			
+// リクエスタに返された応答オブジェクトを本文オブジェクトに送信します。
+response.setBody(body);
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_58872_needit/v1/needit_api/nigetinfo/{user_name}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/nigetinfo/{user_name}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description>ユーザーのNeedItアクティブなNeedItレコードを検索します。必要なものでグループ化します。</short_description>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2020-04-17 02:43:13</sys_created_on>
+        <sys_id>2e090f9c0750d01023dbfc018c1ed045</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>ni_getinfo</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_update_name>sys_ws_operation_2e090f9c0750d01023dbfc018c1ed045</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2020-04-17 05:35:28</sys_updated_on>
+        <web_service_definition display_value="NeedIt API">0c0383d80750d01023dbfc018c1ed043</web_service_definition>
+        <web_service_version display_value="v1">a9b0b39407d0d01023dbfc018c1ed0cb</web_service_version>
+    </sys_ws_operation>
+</record_update>
